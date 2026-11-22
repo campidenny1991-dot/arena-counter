@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#08101f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<title>Arena Counter</title>
+<style>
+:root{--bg:#08101f;--line:#1e3358;--p1:#1ec8eb;--p2:#f03c50;--txt:#e8f0ff;--dim:#7d8fb0;--grn:#19c35a;--yel:#ffd21e}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+html,body{margin:0;min-height:100%;background:radial-gradient(900px 500px at 50% -10%,#14284d,var(--bg));color:var(--txt);font-family:system-ui,Segoe UI,Roboto,sans-serif}
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.app{max-width:900px;margin:auto;padding:8px}
+.top{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px}
+.top .box{background:#0e1a30;border:1px solid var(--line);border-radius:10px;padding:6px;text-align:center;font-size:10px;color:var(--dim);letter-spacing:1px}
+.top .box b{display:block;font-size:20px;color:var(--txt);letter-spacing:0}
+.top input{width:56px;text-align:center;background:#0b1630;border:1px solid var(--line);color:var(--txt);border-radius:6px;padding:3px;font-size:18px;font-weight:800}
+.ctl{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}
+.cb{border:0;border-radius:10px;padding:12px 4px;font-weight:900;font-size:13px;letter-spacing:.5px;color:#fff;background:#13264a;border:1px solid var(--line)}
+.cb.start{background:#19c35a;color:#04210f}.cb.start:disabled{background:#2a3a55;color:#8fa0c0}
+.cb.fin{background:#1a3a2a;border-color:#2c6b48}.cb.rst{color:#ff9aa6}
+.sides{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pn{width:100%;border:1px solid;border-radius:8px;padding:9px 6px;font-weight:800;font-size:15px;color:var(--txt);text-align:center}
+.s0 .pn{border-color:var(--p1);background:#0c3347}.s1 .pn{border-color:var(--p2);background:#40121c}
+.pn.noname{box-shadow:0 0 0 2px var(--yel)}
+.score{height:22vh;min-height:110px;max-height:190px;display:flex;align-items:center;justify-content:center;font-size:min(30vw,22vh,150px);font-weight:900;border-radius:12px;margin:8px 0;position:relative;border:2px solid}
+.s0 .score{border-color:var(--p1);color:var(--p1);background:#082234;text-shadow:0 0 18px var(--p1)}
+.s1 .score{border-color:var(--p2);color:#ff6477;background:#2a0b14;text-shadow:0 0 18px var(--p2)}
+.win{position:absolute;top:4px;font-size:14px;letter-spacing:3px;color:var(--grn);text-shadow:none}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.pb{position:relative;border:0;border-radius:11px;padding:10px 2px 7px;color:#fff;font-weight:800;line-height:1.1;font-size:12px;min-height:64px}
+.pb b{display:block;font-size:20px}.pb:active{filter:brightness(1.4);transform:scale(.97)}
+.dots{display:block;min-height:11px;font-size:10px;letter-spacing:1px;margin-top:3px;font-weight:700}
+.t-SPIN{background:#1f9d8a}.t-BURST,.t-OVER{background:#d9791a}.t-XTREME{background:#b8901f}
+.t-FOUL{grid-column:1/3;background:#17803f;min-height:52px}.t-FOUL.f1{background:#c9a400;color:#1a1400}.t-FOUL.f2{background:#c9283c}
+.rm{position:absolute;left:5px;top:5px;width:24px;height:24px;border-radius:50%;background:#0006;border:1px solid #fff5;font-size:15px;line-height:20px;display:none}
+.pb.has .rm{display:block}
+.ns .pb,.fin .pb{opacity:.3;pointer-events:none}
+.hint{display:none;text-align:center;color:var(--yel);font-size:13px;margin:4px 0}.ns .hint{display:block}
+.foot{text-align:center;color:var(--dim);font-size:11px;margin-top:12px}
+@media (orientation:landscape) and (min-width:600px){.btns{grid-template-columns:repeat(3,1fr)}.t-XTREME{grid-column:1/4}.t-FOUL{grid-column:1/4}.score{min-height:90px;height:30vh}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="top">
+    <div class="box" title="Numero della partita. Sale da solo a FINE PARTITA">ROUND<br><input id="rn" type="number" min="1"></div>
+    <div class="box">TEMPO<b id="tmr">0:00</b></div>
+    <div class="box" title="Punti per vincere. 0 = nessun limite">PUNTI PER VINCERE<br><input id="tg" type="number" min="0" max="99"></div>
+  </div>
+  <div class="ctl">
+    <button class="cb start" id="bStart">START</button>
+    <button class="cb" id="bUndo">UNDO</button>
+    <button class="cb fin" id="bFin">FINE PARTITA</button>
+    <button class="cb rst" id="bRst">RESET</button>
+  </div>
+  <div class="hint">Premi START per iniziare a contare i punti</div>
+  <div class="sides" id="sides">
+    <div class="side s0"><input class="pn" placeholder="Scegli giocatore 1" maxlength="24"><div class="score"></div><div class="btns"></div></div>
+    <div class="side s1"><input class="pn" placeholder="Scegli giocatore 2" maxlength="24"><div class="score"></div><div class="btns"></div></div>
+  </div>
+  <div class="foot">Arena Counter · funziona senza rete e senza account · i dati restano su questo telefono</div>
+</div>
+<script>
+/*ENGINE_START*/
+const Game={
+  TYPES:["SPIN","BURST","OVER","XTREME","FOUL"],
+  PTS:{SPIN:1,BURST:2,OVER:2,XTREME:3,FOUL:0},
+  fresh(round,target){return{names:["",""],round:round||1,target:target==null?4:target,started:false,startAt:0,endAt:0,
+    events:[],score:[0,0],fouls:[0,0],counts:[[0,0,0,0,0],[0,0,0,0,0]],finished:false,winner:-1}},
+  recompute(st,now){
+    st.score=[0,0];st.counts=[[0,0,0,0,0],[0,0,0,0,0]];const nf=[0,0];
+    for(const e of st.events){
+      if(e.type==="FOUL"){const s=e.side;nf[s]++;st.counts[s][4]++;
+        if(nf[s]%2===0){e.pts=1;e.to=1-s;st.score[1-s]++}else{e.pts=0;e.to=-1}}
+      else{st.score[e.to]+=e.pts;st.counts[e.to][Game.TYPES.indexOf(e.type)]++}
+    }
+    st.fouls=[nf[0]%2,nf[1]%2];
+    const was=st.finished;st.finished=false;st.winner=-1;
+    if(st.target>0){const a=st.score[0]>=st.target,b=st.score[1]>=st.target;
+      if(a||b){st.finished=true;st.winner=(a&&b)?(st.score[0]>=st.score[1]?0:1):(a?0:1);if(!was||!st.endAt)st.endAt=now}}
+    if(!st.finished)st.endAt=0;
+  },
+  elapsed(st,now){if(!st.started)return 0;return Math.max(0,Math.floor(((st.finished?st.endAt:now)-st.startAt)/1000))},
+  start(st,now){if(!st.started&&!st.finished){st.started=true;st.startAt=now}},
+  point(st,side,type,now){
+    if(!st.started||st.finished||!(type in Game.PTS)||type==="FOUL"||st.events.length>=500)return false;
+    st.events.push({t:Game.elapsed(st,now),side:side,type:type,pts:Game.PTS[type],to:side});
+    Game.recompute(st,now);return true},
+  foul(st,side,now){   // restituisce true se questo fallo e' una penalita' (2o, 4o...)
+    if(!st.started||st.finished||st.events.length>=500)return null;
+    const n=st.counts[side][4]+1,pen=n%2===0;
+    st.events.push({t:Game.elapsed(st,now),side:side,type:"FOUL",pts:pen?1:0,to:pen?1-side:-1});
+    Game.recompute(st,now);return pen},
+  undo(st,now){if(st.events.length){st.events.pop();Game.recompute(st,now);return true}return false},
+  remove(st,side,type,now){
+    for(let i=st.events.length-1;i>=0;i--){const e=st.events[i];
+      const hit=type==="FOUL"?(e.type==="FOUL"&&e.side===side):(e.type===type&&e.to===side);
+      if(hit){st.events.splice(i,1);Game.recompute(st,now);return true}}
+    return false},
+  finishMatch(st){ // fine partita: tutto si azzera (nomi compresi), il round sale di 1
+    return Game.fresh(st.round+1,st.target)}
+};
+/*ENGINE_END*/
+
+/* ------------------- interfaccia ------------------- */
+const $=s=>document.querySelector(s);
+const KEY='arena_counter_v1';
+let st=Game.fresh(1,4),penAt=[0,0],wake=null;
+try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);if(o&&o.events)st=o}}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}};
+const dots=n=>n<=0?'':(n>10?'×'+n:'●'.repeat(n));
+const mmss=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+const buzz=()=>{try{navigator.vibrate&&navigator.vibrate(20)}catch(e){}};
+const B=[["SPIN",1,0],["BURST",2,1],["OVER",2,2],["XTREME",3,3]];
+
+document.querySelectorAll('.side').forEach((sd,side)=>{
+  const box=sd.querySelector('.btns');
+  const mk=(ty,idx,html)=>{const x=document.createElement('button');x.className='pb t-'+ty;x.dataset.i=idx;x.dataset.ty=ty;
+    x.innerHTML='<span class="rm" title="Togli un punto segnato per errore">−</span>'+html+'<span class="dots"></span>';
+    x.onclick=()=>{buzz();const now=Date.now();
+      if(ty==='FOUL'){if(now-penAt[side]<800)return;const p=Game.foul(st,side,now);if(p){penAt[side]=now;setTimeout(render,850)}}
+      else Game.point(st,side,ty,now);
+      save();render()};
+    x.querySelector('.rm').onclick=e=>{e.stopPropagation();const nm=sd.querySelector('.pn').value||('Giocatore '+(side+1));
+      if(confirm('Togliere un '+ty+(ty==='FOUL'?' (fallo)':'')+' a '+nm+'?')){Game.remove(st,side,ty,Date.now());save();render()}};
+    box.appendChild(x)};
+  B.forEach(([ty,p,i])=>mk(ty,i,'<b>+'+p+'</b>'+(ty==='XTREME'?'XTREME FINISH':ty)));
+  mk('FOUL',4,'FOUL');
+  sd.querySelector('.pn').addEventListener('input',e=>{st.names[side]=e.target.value;save();render(true)});
+});
+$('#rn').addEventListener('change',e=>{st.round=Math.max(1,+e.target.value||1);save();render()});
+$('#tg').addEventListener('change',e=>{st.target=Math.max(0,+e.target.value||0);Game.recompute(st,Date.now());save();render()});
+$('#bStart').onclick=async()=>{Game.start(st,Date.now());save();render();
+  try{if(navigator.wakeLock)wake=await navigator.wakeLock.request('screen')}catch(e){}};   // schermo sempre acceso durante la partita
+$('#bUndo').onclick=()=>{Game.undo(st,Date.now());save();render()};
+$('#bRst').onclick=()=>{if(confirm('Azzerare la partita in corso? (i nomi restano)')){const n=st.names.slice();st=Game.fresh(st.round,st.target);st.names=n;save();render()}};
+$('#bFin').onclick=()=>{if(confirm('Terminare la partita? Punti e nomi vengono azzerati e il round passa al successivo.')){
+  st=Game.finishMatch(st);save();render();try{wake&&wake.release()}catch(e){}}};
+
+function render(keepInputs){
+  const app=$('#app');app.classList.toggle('ns',!st.started&&!st.finished);app.classList.toggle('fin',st.finished);
+  document.querySelectorAll('.side').forEach((sd,s)=>{
+    const pn=sd.querySelector('.pn');if(!keepInputs&&document.activeElement!==pn&&pn.value!==st.names[s])pn.value=st.names[s];
+    pn.classList.toggle('noname',!pn.value.trim());
+    sd.querySelector('.score').innerHTML=st.score[s]+((st.finished&&st.winner===s)?'<span class="win">WIN</span>':'');
+    const f=st.fouls[s],flash=Date.now()-penAt[s]<800;
+    sd.querySelectorAll('.pb').forEach(b=>{const n=st.counts[s][+b.dataset.i]||0;
+      b.querySelector('.dots').textContent=dots(n);b.classList.toggle('has',n>0);
+      if(b.dataset.ty==='FOUL'){b.classList.toggle('f1',f===1&&!flash);b.classList.toggle('f2',flash)}});
+  });
+  if(document.activeElement!==$('#rn'))$('#rn').value=st.round;
+  if(document.activeElement!==$('#tg'))$('#tg').value=st.target;
+  const b=$('#bStart');b.disabled=st.started||st.finished;b.textContent=st.finished?'FINITA':(st.started?'IN CORSO':'START');
+  $('#tmr').textContent=mmss(Game.elapsed(st,Date.now()));
+}
+setInterval(()=>{if(st.started&&!st.finished)$('#tmr').textContent=mmss(Game.elapsed(st,Date.now()))},500);
+render();
+if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});}
+</script>
+</body>
+</html>
